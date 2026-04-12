@@ -8,6 +8,10 @@ const assistant = Assistant({ subsets: ["latin", "hebrew"], weight: ["400", "500
 export const metadata: Metadata = {
   title: "XSAPP — XS Studio",
   description: "מערכת ניהול סטודיו XS",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
