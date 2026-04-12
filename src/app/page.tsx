@@ -73,6 +73,9 @@ export default function Dashboard() {
             <Link href="/timeline" className="text-gray-500 hover:text-gray-800">לו״ז</Link>
             <Link href="/unstaffed" className="text-gray-500 hover:text-gray-800">ללא איוש</Link>
             <Link href={`/profile/${(session.user as any).id}`} className="text-gray-500 hover:text-gray-800">פרופיל</Link>
+            {(session.user as any).role === "admin" && (
+              <Link href="/admin" className="text-gray-500 hover:text-gray-800">⚙️ ניהול</Link>
+            )}
           </nav>
         </div>
       </header>
