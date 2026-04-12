@@ -47,8 +47,8 @@ export default function Dashboard() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: BRAND.dark }}>
-        <div className="animate-pulse text-white text-xl">טוען...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400 text-xl">טוען...</div>
       </div>
     )
   }
@@ -61,18 +61,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
       {/* Header */}
-      <header className="sticky top-0 z-50 shadow-md" style={{ background: BRAND.dark }}>
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={BRAND.logoUrl} alt="XS" className="h-10" />
-            <span className="text-white font-bold text-lg">XSAPP</span>
+            <span className="font-bold text-lg" style={{ color: BRAND.dark }}>XSAPP</span>
           </div>
           <nav className="flex items-center gap-4 text-sm">
-            <Link href="/" className="text-white font-semibold">בית</Link>
-            <Link href="/projects" className="text-gray-300 hover:text-white">פרויקטים</Link>
-            <Link href="/timeline" className="text-gray-300 hover:text-white">לו״ז</Link>
-            <Link href="/unstaffed" className="text-gray-300 hover:text-white">ללא איוש</Link>
-            <Link href={`/profile/${(session.user as any).id}`} className="text-gray-300 hover:text-white">פרופיל</Link>
+            <Link href="/" className="font-semibold" style={{ color: BRAND.primaryColor }}>בית</Link>
+            <Link href="/projects" className="text-gray-500 hover:text-gray-800">פרויקטים</Link>
+            <Link href="/timeline" className="text-gray-500 hover:text-gray-800">לו״ז</Link>
+            <Link href="/unstaffed" className="text-gray-500 hover:text-gray-800">ללא איוש</Link>
+            <Link href={`/profile/${(session.user as any).id}`} className="text-gray-500 hover:text-gray-800">פרופיל</Link>
           </nav>
         </div>
       </header>

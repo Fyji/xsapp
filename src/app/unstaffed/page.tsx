@@ -34,13 +34,13 @@ export default function UnstaffedPage() {
 
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      <header className="sticky top-0 z-50 shadow-md" style={{ background: BRAND.dark }}>
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <img src={BRAND.logoUrl} alt="XS" className="h-8" />
-            <span className="text-white font-bold">XSAPP</span>
+            <span className="font-bold" style={{ color: BRAND.dark }}>XSAPP</span>
           </Link>
-          <span className="text-white text-sm">משימות ללא איוש</span>
+          <span className="text-gray-600 text-sm">משימות ללא איוש</span>
         </div>
       </header>
 
