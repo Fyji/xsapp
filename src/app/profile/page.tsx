@@ -5,8 +5,8 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
-import Navbar from "@/components/navbar"
-import { Bell, Check, X } from "lucide-react"
+import AppShell from "@/components/app-shell"
+import { Bell, Check, X, Save } from "lucide-react"
 
 export default function MyProfile() {
   const { data: session, status } = useSession()
@@ -15,6 +15,7 @@ export default function MyProfile() {
   const [availStatus, setAvailStatus] = useState("available")
   const [dailyNote, setDailyNote] = useState("")
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -40,173 +41,153 @@ export default function MyProfile() {
       body: JSON.stringify({ status: availStatus, dailyNote }),
     })
     setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
-  if (!profile) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: BRAND.grayLight }}>
-      <p className="text-gray-400">טוען...</p>
-    </div>
-  )
+  if (!profile) {
+    return (
+      <AppShell>
+        <div className="p-8 animate-pulse space-y-4">
+          <div className="h-16 w-16 bg-gray-100 rounded-full" />
+          <div className="h-6 w-40 bg-gray-100 rounded" />
+        </div>
+      </AppShell>
+    )
+  }
 
   const daysUntil = (d: string) => d ? Math.ceil((new Date(d).getTime() - Date.now()) / 86400000) : null
 
   return (
-    <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      <Navbar />
-
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-4 mb-6">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold"
-              style={{ backgroundColor: BRAND.primaryColor }}
-            >
-              {profile.fullName.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">{profile.fullName}</h1>
-              <p className="text-sm text-gray-500">{profile.title || profile.role}</p>
-            </div>
+    <AppShell>
+      <div className="p-6 lg:p-8 max-w-[800px]">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold" style={{ backgroundColor: BRAND.primaryColor }}>
+            {profile.fullName.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
           </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{profile.fullName}</h1>
+            <p className="text-sm text-gray-400">{profile.email}</p>
+          </div>
+        </div>
 
-          {/* Availability Update */}
-          <div className="border-t pt-4">
-            <h2 className="font-bold text-gray-700 mb-3">סטטוס יומי</h2>
-            <div className="flex flex-wrap gap-2 mb-4">
+        {/* Status Update */}
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">סטטוס יומי</h2>
+          <div className="border border-gray-200 rounded-lg bg-white p-4 space-y-4">
+            <div className="flex flex-wrap gap-2">
               {Object.entries(AVAILABILITY_CONFIG).map(([key, config]) => (
                 <button
                   key={key}
                   onClick={() => setAvailStatus(key)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition border-2 ${
-                    availStatus === key ? "border-current text-white" : "border-gray-200 text-gray-600"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition ${
+                    availStatus === key
+                      ? "border-transparent text-white"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300"
                   }`}
-                  style={availStatus === key ? { backgroundColor: config.color, borderColor: config.color } : {}}
+                  style={availStatus === key ? { backgroundColor: config.color } : {}}
                 >
-                  {config.icon} {config.label}
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: availStatus === key ? "#fff" : config.color }} />
+                  {config.label}
                 </button>
               ))}
             </div>
-
-            <textarea
-              value={dailyNote}
-              onChange={(e) => setDailyNote(e.target.value)}
-              placeholder="על מה אתה עובד היום?"
-              className="w-full p-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2"
-              style={{ focusRingColor: BRAND.primaryColor } as any}
-              rows={3}
-            />
-
+            <div>
+              <label className="block text-[11px] text-gray-400 mb-1">פנייה יומית</label>
+              <input
+                type="text"
+                value={dailyNote}
+                onChange={(e) => setDailyNote(e.target.value)}
+                placeholder="למשל: 'היום אני ב-Zoom עד 14:00'"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-300"
+              />
+            </div>
             <button
               onClick={saveStatus}
               disabled={saving}
-              className="mt-3 px-6 py-2 rounded-xl text-white font-medium text-sm disabled:opacity-50"
-              style={{ backgroundColor: BRAND.primaryColor }}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                saved
+                  ? "bg-green-500 text-white"
+                  : "text-white"
+              }`}
+              style={!saved ? { backgroundColor: BRAND.primaryColor } : {}}
             >
-              {saving ? "שומר..." : "שמור סטטוס"}
+              {saved ? <><Check size={14} /> נשמר</> : saving ? "שומר..." : <><Save size={14} /> שמירה</>}
             </button>
           </div>
-        </div>
+        </section>
+
+        {/* Pending Requests */}
+        {profile.pendingRequests?.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+              <Bell size={14} style={{ color: BRAND.primaryColor }} /> בקשות ממתינות
+            </h2>
+            <div className="border border-gray-200 rounded-lg bg-white divide-y divide-gray-100">
+              {profile.pendingRequests.map((hr: any) => (
+                <div key={hr.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {hr.fromUser.fullName}
+                    </p>
+                    <p className="text-[11px] text-gray-400">{hr.type === "call" ? "בקשת פגישה" : "הרמת יד"}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await fetch("/api/hand-raise", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: hr.id, status: "done" }),
+                      })
+                      setProfile((p: any) => ({
+                        ...p,
+                        pendingRequests: p.pendingRequests.filter((r: any) => r.id !== hr.id),
+                      }))
+                    }}
+                    className="px-3 py-1 text-xs rounded-md bg-green-50 text-green-600 hover:bg-green-100 transition"
+                  >
+                    <Check size={12} className="inline -mt-0.5" /> טופל
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* My Projects */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-bold text-gray-700 mb-3">הפרויקטים שלי</h2>
+        <section>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">הפרויקטים שלי</h2>
           {profile.projects.length === 0 ? (
-            <p className="text-gray-400 text-sm">אין פרויקטים פעילים</p>
+            <p className="text-sm text-gray-400">אין פרויקטים פעילים</p>
           ) : (
-            <div className="space-y-3">
+            <div className="border border-gray-200 rounded-lg bg-white divide-y divide-gray-100">
               {profile.projects.map((p: any) => {
                 const urg = URGENCY_CONFIG[p.urgency as keyof typeof URGENCY_CONFIG]
                 const days = p.nextDeadline ? daysUntil(p.nextDeadline) : null
                 return (
-                  <Link
-                    key={p.id}
-                    href={`/projects/${p.id}`}
-                    className="block p-4 rounded-xl border border-gray-100 hover:shadow-sm transition"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-gray-800">{p.name}</p>
-                        <p className="text-xs text-gray-400">{p.roleInProject}</p>
-                      </div>
-                      <div className="text-left">
-                        {urg && (
-                          <span
-                            className="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                            style={{ backgroundColor: urg.bg, color: urg.color }}
-                          >
-                            {urg.label}
-                          </span>
-                        )}
-                        {days !== null && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {p.nextDeadlineTitle} — {days} ימים
-                          </p>
-                        )}
-                      </div>
+                  <Link key={p.id} href={`/projects/${p.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{p.name}</p>
                     </div>
+                    {urg && (
+                      <span className="inline-flex items-center gap-1 text-[11px]">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: urg.color }} />
+                        <span style={{ color: urg.color }}>{urg.label}</span>
+                      </span>
+                    )}
+                    {days !== null && (
+                      <span className={`text-[11px] font-medium ${days <= 3 ? "text-pink-600" : "text-gray-400"}`}>
+                        {days} ימים
+                      </span>
+                    )}
                   </Link>
                 )
               })}
             </div>
           )}
-        </div>
-
-        {/* Pending Hand Raises */}
-        {profile.pendingHandRaises.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold text-gray-700 mb-3"><Bell size={18} className="inline -mt-0.5" style={{ color: "#E5007D" }} /> בקשות ממתינות</h2>
-            <div className="space-y-2">
-              {profile.pendingHandRaises.map((hr: any) => (
-                <div key={hr.id} className="flex items-center justify-between p-3 rounded-xl bg-pink-50 border border-pink-100">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      {hr.from.fullName}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(hr.createdAt).toLocaleDateString("he-IL")}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={async () => {
-                        await fetch("/api/hand-raise", {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: hr.id, status: "done" }),
-                        })
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          pendingHandRaises: prev.pendingHandRaises.filter((h: any) => h.id !== hr.id),
-                        }))
-                      }}
-                      className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium"
-                    >
-                      ✅ טופל
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await fetch("/api/hand-raise", {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ id: hr.id, status: "dismissed" }),
-                        })
-                        setProfile((prev: any) => ({
-                          ...prev,
-                          pendingHandRaises: prev.pendingHandRaises.filter((h: any) => h.id !== hr.id),
-                        }))
-                      }}
-                      className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
+        </section>
+      </div>
+    </AppShell>
   )
 }

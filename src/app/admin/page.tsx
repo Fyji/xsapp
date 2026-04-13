@@ -5,14 +5,10 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
-import Navbar from "@/components/navbar"
-import { Users, FolderOpen, AlertTriangle, Hand, HelpCircle, Pencil, Trash2, Eye, Plus } from "lucide-react"
+import AppShell from "@/components/app-shell"
+import { Users, FolderOpen, AlertTriangle, Bell, Pencil, Trash2, Eye, Plus, Search } from "lucide-react"
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: "מנהל",
-  team_lead: "ראש צוות",
-  employee: "עובד",
-}
+const ROLE_LABELS: Record<string, string> = { admin: "מנהל", team_lead: "ראש צוות", employee: "עובד" }
 
 export default function AdminPage() {
   const { data: session, status } = useSession()
@@ -25,14 +21,12 @@ export default function AdminPage() {
   const [newUser, setNewUser] = useState({ email: "", fullName: "", password: "", role: "employee", title: "", phone: "" })
   const [saving, setSaving] = useState(false)
   const [editingUser, setEditingUser] = useState<any>(null)
+  const [searchUsers, setSearchUsers] = useState("")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
     if (status === "authenticated") {
-      if ((session?.user as any)?.role !== "admin") {
-        router.push("/")
-        return
-      }
+      if ((session?.user as any)?.role !== "admin") { router.push("/"); return }
       loadData()
     }
   }, [status, session, router])
@@ -46,413 +40,229 @@ export default function AdminPage() {
   const createUser = async () => {
     if (!newUser.email || !newUser.fullName || !newUser.password) return
     setSaving(true)
-    const res = await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newUser),
-    })
-    if (res.ok) {
-      setShowNewUser(false)
-      setNewUser({ email: "", fullName: "", password: "", role: "employee", title: "", phone: "" })
-      loadData()
-    } else {
-      const err = await res.json()
-      alert(err.error || "שגיאה ביצירת משתמש")
-    }
+    const res = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newUser) })
+    if (res.ok) { setShowNewUser(false); setNewUser({ email: "", fullName: "", password: "", role: "employee", title: "", phone: "" }); loadData() }
+    else { const err = await res.json(); alert(err.error || "שגיאה") }
     setSaving(false)
   }
 
   const deleteUser = async (id: string, name: string) => {
-    if (!confirm(`למחוק את ${name}? הפעולה בלתי הפיכה`)) return
-    await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" })
-    loadData()
+    if (!confirm(`למחוק את ${name}?`)) return
+    await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" }); loadData()
   }
 
   const updateUser = async () => {
     if (!editingUser) return
     setSaving(true)
-    await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editingUser),
-    })
-    setEditingUser(null)
-    setSaving(false)
-    loadData()
+    await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editingUser) })
+    setEditingUser(null); setSaving(false); loadData()
   }
 
   const updateProject = async (id: string, data: any) => {
-    await fetch("/api/admin/projects", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...data }),
-    })
+    await fetch("/api/admin/projects", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...data }) })
     loadData()
   }
 
   const deleteProject = async (id: string, name: string) => {
-    if (!confirm(`למחוק את הפרויקט "${name}"? כל המשימות והאירועים יימחקו`)) return
-    await fetch(`/api/admin/projects?id=${id}`, { method: "DELETE" })
-    loadData()
+    if (!confirm(`למחוק "${name}"?`)) return
+    await fetch(`/api/admin/projects?id=${id}`, { method: "DELETE" }); loadData()
   }
 
   if (!session || (session.user as any)?.role !== "admin") return null
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  const filteredUsers = users.filter((u) => !searchUsers || u.fullName.includes(searchUsers) || u.email.includes(searchUsers))
 
-      {/* Tabs */}
-      <div className="max-w-6xl mx-auto px-4 pt-4">
-        <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
+  const inputCls = "w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-300"
+
+  return (
+    <AppShell>
+      <div className="p-6 lg:p-8 max-w-[1100px]">
+        <h1 className="text-xl font-bold text-gray-900 mb-6">ניהול</h1>
+
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-gray-200 mb-6">
           {[
-            { key: "overview", label: "סקירה כללית" },
-            { key: "users", label: "ניהול עובדים" },
-            { key: "projects", label: "ניהול פרויקטים" },
+            { key: "overview", label: "סקירה" },
+            { key: "users", label: "עובדים" },
+            { key: "projects", label: "פרויקטים" },
           ].map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key as any)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                tab === t.key ? "text-white" : "text-gray-500 hover:text-gray-800"
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
+                tab === t.key
+                  ? "border-pink-600 text-pink-700"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
-              style={tab === t.key ? { backgroundColor: BRAND.primaryColor } : {}}
             >
               {t.label}
             </button>
           ))}
         </div>
-      </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-
-        {/* OVERVIEW TAB */}
+        {/* OVERVIEW */}
         {tab === "overview" && stats && (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: "עובדים", value: stats.totalUsers, icon: "users", color: BRAND.primaryColor },
-                { label: "פרויקטים פעילים", value: stats.activeProjects, icon: "folder", color: "#3B82F6" },
-                { label: "משימות ללא איוש", value: stats.openTasks, icon: "alert", color: "#EF4444" },
-                { label: "בקשות ממתינות", value: stats.pendingHandRaises, icon: "hand", color: "#F59E0B" },
+                { label: "עובדים", value: stats.totalUsers, Icon: Users, color: BRAND.primaryColor },
+                { label: "פרויקטים פעילים", value: stats.activeProjects, Icon: FolderOpen, color: "#3B82F6" },
+                { label: "ללא איוש", value: stats.openTasks, Icon: AlertTriangle, color: "#EF4444" },
+                { label: "בקשות ממתינות", value: stats.pendingHandRaises, Icon: Bell, color: "#F59E0B" },
               ].map((kpi) => (
-                <div key={kpi.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  {kpi.icon === "users" ? <Users size={24} style={{ color: kpi.color }} /> : kpi.icon === "folder" ? <FolderOpen size={24} style={{ color: kpi.color }} /> : kpi.icon === "alert" ? <AlertTriangle size={24} style={{ color: kpi.color }} /> : <Hand size={24} style={{ color: kpi.color }} />}
-                  <p className="text-3xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
-                  <p className="text-sm text-gray-500">{kpi.label}</p>
+                <div key={kpi.label} className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 bg-white">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: kpi.color + "15" }}>
+                    <kpi.Icon size={18} style={{ color: kpi.color }} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900 leading-none">{kpi.value}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{kpi.label}</p>
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Availability Summary */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="font-bold text-gray-700 mb-4">זמינות הצוות היום</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-3">
-                {Object.entries(AVAILABILITY_CONFIG).map(([key, config]) => {
-                  const count = stats.availabilitySummary[key] || 0
-                  return (
-                    <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
-                      <span className="text-lg">{config.icon}</span>
-                      <span className="text-xl font-bold" style={{ color: config.color }}>{count}</span>
-                      <span className="text-xs sm:text-sm text-gray-500">{config.label}</span>
-                    </div>
-                  )
-                })}
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
-                  <HelpCircle size={18} className="text-gray-400" />
-                  <span className="text-xl font-bold text-gray-400">{stats.availabilitySummary.no_update || 0}</span>
-                  <span className="text-xs sm:text-sm text-gray-500">לא עדכנו</span>
-                </div>
+            <div className="border border-gray-200 rounded-lg bg-white p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">זמינות היום</h3>
+              <div className="flex flex-wrap gap-4">
+                {Object.entries(AVAILABILITY_CONFIG).map(([key, config]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: config.color }} />
+                    <span className="text-lg font-bold" style={{ color: config.color }}>{stats.availabilitySummary[key] || 0}</span>
+                    <span className="text-xs text-gray-400">{config.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Upcoming Events */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="font-bold text-gray-700 mb-4">אירועים ב-14 הימים הקרובים</h2>
+            <div className="border border-gray-200 rounded-lg bg-white">
+              <div className="px-4 py-3 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900">אירועים קרובים</h3>
+              </div>
               {stats.upcomingEvents.length === 0 ? (
-                <p className="text-gray-400 text-sm">אין אירועים</p>
+                <p className="px-4 py-6 text-center text-sm text-gray-400">אין אירועים</p>
               ) : (
-                <div className="space-y-2">
+                <div className="divide-y divide-gray-100">
                   {stats.upcomingEvents.map((ev: any) => (
-                    <div key={ev.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50">
+                    <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
                       <div>
                         <p className="text-sm font-medium text-gray-800">{ev.title}</p>
-                        <p className="text-xs text-gray-400">{ev.projectName}</p>
+                        <p className="text-[11px] text-gray-400">{ev.projectName}</p>
                       </div>
-                      <p className="text-sm text-gray-600">{new Date(ev.date).toLocaleDateString("he-IL")}</p>
+                      <span className="text-xs text-gray-500">{new Date(ev.date).toLocaleDateString("he-IL")}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
-        {/* USERS TAB */}
+        {/* USERS */}
         {tab === "users" && (
-          <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold" style={{ color: BRAND.dark }}>ניהול עובדים ({users.length})</h2>
-              <button
-                onClick={() => setShowNewUser(true)}
-                className="px-4 py-2 rounded-xl text-white text-sm font-medium"
-                style={{ backgroundColor: BRAND.primaryColor }}
-              >
-                <Plus size={14} className="inline -mt-0.5" /> עובד חדש
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-2 justify-between">
+              <div className="relative max-w-xs w-full">
+                <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text" placeholder="חיפוש עובד..." value={searchUsers} onChange={(e) => setSearchUsers(e.target.value)}
+                  className="w-full pl-3 pr-9 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-200"
+                />
+              </div>
+              <button onClick={() => setShowNewUser(true)} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: BRAND.primaryColor }}>
+                <Plus size={15} /> עובד חדש
               </button>
             </div>
 
-            {/* New User Form */}
-            {showNewUser && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border-2" style={{ borderColor: BRAND.primaryColor }}>
-                <h3 className="font-bold text-gray-700 mb-4">יצירת עובד חדש</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">שם מלא *</label>
-                    <input value={newUser.fullName} onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">אימייל *</label>
-                    <input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" dir="ltr" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">סיסמה *</label>
-                    <input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" dir="ltr" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">תפקיד</label>
-                    <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
-                      <option value="employee">עובד</option>
-                      <option value="team_lead">ראש צוות</option>
-                      <option value="admin">מנהל</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">כותרת</label>
-                    <input value={newUser.title} onChange={(e) => setNewUser({ ...newUser, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" placeholder="אדריכל / מעצבת פנים" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">טלפון</label>
-                    <input value={newUser.phone} onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" dir="ltr" />
-                  </div>
+            {/* New/Edit User Form */}
+            {(showNewUser || editingUser) && (
+              <div className="border border-gray-200 rounded-lg bg-white p-5">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">{editingUser ? `עריכה: ${editingUser.fullName}` : "עובד חדש"}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div><label className="block text-[11px] text-gray-400 mb-1">שם מלא *</label>
+                    <input value={editingUser?.fullName ?? newUser.fullName} onChange={(e) => editingUser ? setEditingUser({ ...editingUser, fullName: e.target.value }) : setNewUser({ ...newUser, fullName: e.target.value })} className={inputCls} /></div>
+                  <div><label className="block text-[11px] text-gray-400 mb-1">אימייל *</label>
+                    <input type="email" dir="ltr" value={editingUser?.email ?? newUser.email} onChange={(e) => editingUser ? setEditingUser({ ...editingUser, email: e.target.value }) : setNewUser({ ...newUser, email: e.target.value })} className={inputCls} /></div>
+                  <div><label className="block text-[11px] text-gray-400 mb-1">{editingUser ? "סיסמה חדשה" : "סיסמה *"}</label>
+                    <input type="password" dir="ltr" value={editingUser?.password ?? newUser.password} onChange={(e) => editingUser ? setEditingUser({ ...editingUser, password: e.target.value }) : setNewUser({ ...newUser, password: e.target.value })} className={inputCls} /></div>
+                  <div><label className="block text-[11px] text-gray-400 mb-1">תפקיד</label>
+                    <select value={editingUser?.role ?? newUser.role} onChange={(e) => editingUser ? setEditingUser({ ...editingUser, role: e.target.value }) : setNewUser({ ...newUser, role: e.target.value })} className={inputCls}>
+                      <option value="employee">עובד</option><option value="team_lead">ראש צוות</option><option value="admin">מנהל</option>
+                    </select></div>
+                  <div><label className="block text-[11px] text-gray-400 mb-1">כותרת</label>
+                    <input value={editingUser?.title ?? newUser.title} onChange={(e) => editingUser ? setEditingUser({ ...editingUser, title: e.target.value }) : setNewUser({ ...newUser, title: e.target.value })} className={inputCls} placeholder="אדריכל / מעצבת פנים" /></div>
+                  <div><label className="block text-[11px] text-gray-400 mb-1">טלפון</label>
+                    <input dir="ltr" value={editingUser?.phone ?? newUser.phone} onChange={(e) => editingUser ? setEditingUser({ ...editingUser, phone: e.target.value }) : setNewUser({ ...newUser, phone: e.target.value })} className={inputCls} /></div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <button onClick={createUser} disabled={saving}
-                    className="px-6 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-50"
-                    style={{ backgroundColor: BRAND.primaryColor }}>
-                    {saving ? "יוצר..." : "צור עובד"}
+                  <button onClick={editingUser ? updateUser : createUser} disabled={saving} className="px-5 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: BRAND.primaryColor }}>
+                    {saving ? "שומר..." : editingUser ? "שמור" : "צור"}
                   </button>
-                  <button onClick={() => setShowNewUser(false)}
-                    className="px-6 py-2 rounded-xl text-gray-600 text-sm border border-gray-200">ביטול</button>
+                  <button onClick={() => { setShowNewUser(false); setEditingUser(null) }} className="px-5 py-2 rounded-lg text-sm text-gray-500 border border-gray-200">ביטול</button>
                 </div>
               </div>
             )}
 
-            {/* Edit User Modal */}
-            {editingUser && (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-blue-300">
-                <h3 className="font-bold text-gray-700 mb-4">עריכת עובד: {editingUser.fullName}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">שם מלא</label>
-                    <input value={editingUser.fullName} onChange={(e) => setEditingUser({ ...editingUser, fullName: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">אימייל</label>
-                    <input value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" dir="ltr" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">תפקיד</label>
-                    <select value={editingUser.role} onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
-                      <option value="employee">עובד</option>
-                      <option value="team_lead">ראש צוות</option>
-                      <option value="admin">מנהל</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">כותרת</label>
-                    <input value={editingUser.title || ""} onChange={(e) => setEditingUser({ ...editingUser, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">טלפון</label>
-                    <input value={editingUser.phone || ""} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" dir="ltr" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">סיסמה חדשה (ריק = ללא שינוי)</label>
-                    <input type="password" value={editingUser.password || ""} onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm" dir="ltr" />
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button onClick={updateUser} disabled={saving}
-                    className="px-6 py-2 rounded-xl text-white text-sm font-medium disabled:opacity-50"
-                    style={{ backgroundColor: BRAND.primaryColor }}>
-                    {saving ? "שומר..." : "שמור שינויים"}
-                  </button>
-                  <button onClick={() => setEditingUser(null)}
-                    className="px-6 py-2 rounded-xl text-gray-600 text-sm border border-gray-200">ביטול</button>
-                </div>
+            {/* Users table */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+              <div className="hidden sm:grid grid-cols-[1fr_140px_80px_80px_100px] gap-3 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                <span>שם</span><span>אימייל</span><span>תפקיד</span><span>פרויקטים</span><span>פעולות</span>
               </div>
-            )}
-
-            {/* Users — Desktop table */}
-            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">שם</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">אימייל</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">תפקיד</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">כותרת</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">פרויקטים</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">פעולות</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {users.map((u) => (
-                      <tr key={u.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-800">{u.fullName}</td>
-                        <td className="px-4 py-3 text-gray-500" dir="ltr">{u.email}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            u.role === "admin" ? "bg-purple-100 text-purple-700" :
-                            u.role === "team_lead" ? "bg-blue-100 text-blue-700" :
-                            "bg-gray-100 text-gray-600"
-                          }`}>
-                            {ROLE_LABELS[u.role]}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">{u.title || "—"}</td>
-                        <td className="px-4 py-3 text-gray-500">{u.activeProjects}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            <button onClick={() => setEditingUser(u)}
-                              className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"><Pencil size={12} className="inline -mt-0.5" /> ערוך</button>
-                            <button onClick={() => deleteUser(u.id, u.fullName)}
-                              className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={12} className="inline -mt-0.5" /> מחק</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Users — Mobile cards */}
-            <div className="md:hidden space-y-3">
-              {users.map((u) => (
-                <div key={u.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="font-bold text-gray-800">{u.fullName}</p>
-                      <p className="text-xs text-gray-400" dir="ltr">{u.email}</p>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      u.role === "admin" ? "bg-purple-100 text-purple-700" :
-                      u.role === "team_lead" ? "bg-blue-100 text-blue-700" :
-                      "bg-gray-100 text-gray-600"
-                    }`}>
-                      {ROLE_LABELS[u.role]}
-                    </span>
+              {filteredUsers.map((u) => (
+                <div key={u.id} className="sm:grid sm:grid-cols-[1fr_140px_80px_80px_100px] gap-3 px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 items-center">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{u.fullName}</p>
+                    <p className="text-[11px] text-gray-400 sm:hidden" dir="ltr">{u.email}</p>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-                    {u.title && <span>{u.title}</span>}
-                    <span>{u.activeProjects} פרויקטים</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingUser(u)}
-                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"><Pencil size={12} className="inline -mt-0.5" /> ערוך</button>
-                    <button onClick={() => deleteUser(u.id, u.fullName)}
-                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={12} className="inline -mt-0.5" /> מחק</button>
+                  <p className="text-xs text-gray-500 hidden sm:block truncate" dir="ltr">{u.email}</p>
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium w-fit ${
+                    u.role === "admin" ? "bg-purple-50 text-purple-600" : u.role === "team_lead" ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-500"
+                  }`}>{ROLE_LABELS[u.role]}</span>
+                  <span className="text-xs text-gray-500 hidden sm:block">{u.activeProjects}</span>
+                  <div className="flex gap-1.5 mt-2 sm:mt-0">
+                    <button onClick={() => setEditingUser(u)} className="text-[11px] px-2 py-1 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200"><Pencil size={11} /></button>
+                    <button onClick={() => deleteUser(u.id, u.fullName)} className="text-[11px] px-2 py-1 rounded-md bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={11} /></button>
                   </div>
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
-        {/* PROJECTS TAB */}
+        {/* PROJECTS */}
         {tab === "projects" && (
-          <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold" style={{ color: BRAND.dark }}>ניהול פרויקטים ({projects.length})</h2>
-              <Link href="/projects/new" className="px-4 py-2 rounded-xl text-white text-sm font-medium"
-                style={{ backgroundColor: BRAND.primaryColor }}><Plus size={14} className="inline -mt-0.5" /> פרויקט חדש</Link>
-            </div>
-
-            <div className="space-y-3">
+          <div className="space-y-4">
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+              <div className="hidden sm:grid grid-cols-[1fr_100px_100px_80px_80px_80px] gap-3 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                <span>פרויקט</span><span>ראש צוות</span><span>סטטוס</span><span>דחיפות</span><span>משימות</span><span>פעולות</span>
+              </div>
               {projects.map((p) => {
                 const urg = URGENCY_CONFIG[p.urgency as keyof typeof URGENCY_CONFIG]
                 return (
-                  <div key={p.id} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-bold text-gray-800">{p.name}</h3>
-                          {urg && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium"
-                              style={{ backgroundColor: urg.bg, color: urg.color }}>{urg.label}</span>
-                          )}
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            p.status === "active" ? "bg-green-100 text-green-700" :
-                            p.status === "on_hold" ? "bg-yellow-100 text-yellow-700" :
-                            p.status === "completed" ? "bg-gray-100 text-gray-600" :
-                            "bg-red-50 text-red-500"
-                          }`}>
-                            {p.status === "active" ? "פעיל" : p.status === "on_hold" ? "מושהה" : p.status === "completed" ? "הושלם" : "ארכיון"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          ראש צוות: {p.teamLead?.fullName} · {p.memberCount} חברי צוות · {p.totalTasks} משימות ({p.openTasks} פתוחות)
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <select
-                          value={p.status}
-                          onChange={(e) => updateProject(p.id, { status: e.target.value })}
-                          className="text-xs px-2 py-1.5 rounded-lg border border-gray-200"
-                        >
-                          <option value="active">פעיל</option>
-                          <option value="on_hold">מושהה</option>
-                          <option value="completed">הושלם</option>
-                          <option value="archived">ארכיון</option>
-                        </select>
-                        <select
-                          value={p.urgency}
-                          onChange={(e) => updateProject(p.id, { urgency: e.target.value })}
-                          className="text-xs px-2 py-1.5 rounded-lg border border-gray-200"
-                        >
-                          {Object.entries(URGENCY_CONFIG).map(([key, config]) => (
-                            <option key={key} value={key}>{config.icon} {config.label}</option>
-                          ))}
-                        </select>
-                        <Link href={`/projects/${p.id}`}
-                          className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"><Eye size={12} /></Link>
-                        <button onClick={() => deleteProject(p.id, p.name)}
-                          className="text-xs px-2 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={12} /></button>
-                      </div>
+                  <div key={p.id} className="sm:grid sm:grid-cols-[1fr_100px_100px_80px_80px_80px] gap-3 px-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 items-center">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                      {p.clientName && <p className="text-[11px] text-gray-400 truncate">{p.clientName}</p>}
+                    </div>
+                    <p className="text-xs text-gray-500 hidden sm:block truncate">{p.teamLead?.fullName}</p>
+                    <select value={p.status} onChange={(e) => updateProject(p.id, { status: e.target.value })} className="text-[11px] px-1.5 py-1 rounded border border-gray-200 bg-white hidden sm:block">
+                      <option value="active">פעיל</option><option value="on_hold">מושהה</option><option value="completed">הושלם</option><option value="archived">ארכיון</option>
+                    </select>
+                    <div className="hidden sm:block">
+                      {urg && <span className="flex items-center gap-1 text-[11px]"><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: urg.color }} /><span style={{ color: urg.color }}>{urg.label.split(" ")[0]}</span></span>}
+                    </div>
+                    <span className="text-xs text-gray-500 hidden sm:block">{p.openTasks}/{p.totalTasks}</span>
+                    <div className="flex gap-1.5 mt-2 sm:mt-0">
+                      <Link href={`/projects/${p.id}`} className="text-[11px] px-2 py-1 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200"><Eye size={11} /></Link>
+                      <button onClick={() => deleteProject(p.id, p.name)} className="text-[11px] px-2 py-1 rounded-md bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={11} /></button>
                     </div>
                   </div>
                 )
               })}
             </div>
-          </>
+          </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }

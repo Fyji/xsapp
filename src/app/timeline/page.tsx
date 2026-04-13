@@ -3,23 +3,23 @@
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { BRAND } from "@/lib/constants"
+import { BRAND, EVENT_TYPE_CONFIG } from "@/lib/constants"
 import Link from "next/link"
-import Navbar from "@/components/navbar"
-import { Package, ClipboardList, Users, Handshake, ListOrdered } from "lucide-react"
-
-const EVENT_COLORS = {
-  final_submission: { bg: "#E5007D", text: "#fff", label: "הגשה סופית", dot: "#E5007D" },
-  interim_submission: { bg: "#F472B6", text: "#fff", label: "הגשת ביניים", dot: "#F472B6" },
-  internal_meeting: { bg: "#FBCFE8", text: "#831843", label: "פגישה פנימית", dot: "#F9A8D4" },
-  external_meeting: { bg: "#FCE7F3", text: "#9D174D", label: "פגישה חיצונית", dot: "#FECDD3" },
-} as const
+import AppShell from "@/components/app-shell"
+import { Package, ClipboardList, Users, Handshake, ChevronRight, ChevronLeft } from "lucide-react"
 
 const HEBREW_DAYS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"]
 const HEBREW_MONTHS = [
   "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
   "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
 ]
+
+const TYPE_ICONS: Record<string, any> = {
+  final_submission: Package,
+  interim_submission: ClipboardList,
+  internal_meeting: Users,
+  external_meeting: Handshake,
+}
 
 export default function TimelinePage() {
   const { data: session, status } = useSession()
@@ -37,12 +37,11 @@ export default function TimelinePage() {
 
   if (!session) return null
 
-  // Calendar helpers
   const year = currentMonth.getFullYear()
   const month = currentMonth.getMonth()
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
-  const startDayOfWeek = firstDay.getDay() // 0=Sun
+  const startDayOfWeek = firstDay.getDay()
   const daysInMonth = lastDay.getDate()
 
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1))
@@ -52,7 +51,6 @@ export default function TimelinePage() {
     setSelectedDate(new Date().toISOString().split("T")[0])
   }
 
-  // Map events to dates
   const eventsByDate: Record<string, any[]> = {}
   events.forEach((ev) => {
     const d = new Date(ev.date).toISOString().split("T")[0]
@@ -62,199 +60,189 @@ export default function TimelinePage() {
 
   const today = new Date().toISOString().split("T")[0]
 
-  // Build calendar grid
   const calendarCells: (number | null)[] = []
   for (let i = 0; i < startDayOfWeek; i++) calendarCells.push(null)
   for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d)
   while (calendarCells.length % 7 !== 0) calendarCells.push(null)
 
-  const getDateStr = (day: number) => {
-    const m = String(month + 1).padStart(2, "0")
-    const d = String(day).padStart(2, "0")
-    return `${year}-${m}-${d}`
-  }
+  const getDateStr = (day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
 
   const selectedEvents = selectedDate ? eventsByDate[selectedDate] || [] : []
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  // Agenda: all future events this month
+  const monthEvents = events
+    .filter((e) => {
+      const d = new Date(e.date)
+      return d.getMonth() === month && d.getFullYear() === year && d >= new Date(new Date().setHours(0,0,0,0))
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-5">
-        {/* Month nav */}
-        <div className="flex items-center justify-between">
-          <button onClick={prevMonth} className="px-3 py-2 rounded-xl bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 shadow-sm text-sm">→</button>
-          <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: BRAND.dark }}>
+  return (
+    <AppShell>
+      <div className="p-6 lg:p-8 max-w-[1100px]">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">לוח זמנים</h1>
+            <p className="text-sm text-gray-400 mt-0.5">
               {HEBREW_MONTHS[month]} {year}
-            </h1>
-            <button onClick={goToday} className="text-xs mt-0.5" style={{ color: BRAND.primaryColor }}>היום</button>
+            </p>
           </div>
-          <button onClick={nextMonth} className="px-3 py-2 rounded-xl bg-white border border-gray-100 text-gray-600 hover:bg-gray-50 shadow-sm text-sm">←</button>
+          <div className="flex items-center gap-2">
+            <button onClick={goToday} className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+              היום
+            </button>
+            <button onClick={nextMonth} className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+              <ChevronRight size={16} />
+            </button>
+            <button onClick={prevMonth} className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition">
+              <ChevronLeft size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-3 justify-center">
-          {Object.entries(EVENT_COLORS).map(([key, config]) => (
-            <div key={key} className="flex items-center gap-1.5 text-xs text-gray-600">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: config.dot }} />
+        <div className="flex flex-wrap gap-4 mb-4">
+          {Object.entries(EVENT_TYPE_CONFIG).map(([key, config]) => (
+            <div key={key} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
               {config.label}
             </div>
           ))}
         </div>
 
-        {/* Calendar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50">
-            {HEBREW_DAYS.map((d) => (
-              <div key={d} className="py-2 text-center text-xs font-medium text-gray-500">{d}</div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Calendar */}
+          <div className="lg:col-span-3">
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+              {/* Day headers */}
+              <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+                {HEBREW_DAYS.map((d) => (
+                  <div key={d} className="py-2 text-center text-[11px] font-medium text-gray-400">{d}</div>
+                ))}
+              </div>
 
-          {/* Calendar cells */}
-          <div className="grid grid-cols-7">
-            {calendarCells.map((day, i) => {
-              if (day === null) return <div key={i} className="min-h-[60px] sm:min-h-[80px] border-b border-l border-gray-50" />
+              {/* Cells */}
+              <div className="grid grid-cols-7">
+                {calendarCells.map((day, i) => {
+                  if (day === null) return <div key={i} className="min-h-[64px] border-b border-l border-gray-100" />
 
-              const dateStr = getDateStr(day)
-              const dayEvents = eventsByDate[dateStr] || []
-              const isToday = dateStr === today
-              const isSelected = dateStr === selectedDate
-              const isFriday = (i % 7) === 5
-              const isSaturday = (i % 7) === 6
+                  const dateStr = getDateStr(day)
+                  const dayEvents = eventsByDate[dateStr] || []
+                  const isToday = dateStr === today
+                  const isSelected = dateStr === selectedDate
+                  const isFriSat = (i % 7) === 5 || (i % 7) === 6
 
-              return (
-                <button
-                  key={i}
-                  onClick={() => setSelectedDate(dateStr === selectedDate ? null : dateStr)}
-                  className={`min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 border-b border-l border-gray-50 text-right transition relative
-                    ${isSelected ? "bg-pink-50" : "hover:bg-gray-50"}
-                    ${isFriday || isSaturday ? "bg-gray-25" : ""}
-                  `}
-                >
-                  {/* Day number */}
-                  <span className={`text-xs sm:text-sm font-medium inline-flex items-center justify-center
-                    ${isToday ? "w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white" : ""}
-                    ${isToday ? "" : isFriday || isSaturday ? "text-gray-400" : "text-gray-700"}
-                  `}
-                    style={isToday ? { backgroundColor: BRAND.primaryColor } : {}}
-                  >
-                    {day}
-                  </span>
-
-                  {/* Event dots / mini-pills */}
-                  {dayEvents.length > 0 && (
-                    <div className="mt-0.5 space-y-0.5">
-                      {dayEvents.slice(0, 3).map((ev: any, j: number) => {
-                        const config = EVENT_COLORS[ev.type as keyof typeof EVENT_COLORS] || EVENT_COLORS.internal_meeting
-                        return (
-                          <div key={j} className="hidden sm:block truncate rounded px-1 py-0.5 text-[10px] leading-tight font-medium"
-                            style={{ backgroundColor: config.bg, color: config.text }}>
-                            {ev.title.length > 12 ? ev.title.slice(0, 12) + "…" : ev.title}
-                          </div>
-                        )
-                      })}
-                      {/* Mobile: just dots */}
-                      <div className="flex gap-0.5 sm:hidden justify-center mt-1">
-                        {dayEvents.slice(0, 4).map((ev: any, j: number) => {
-                          const config = EVENT_COLORS[ev.type as keyof typeof EVENT_COLORS] || EVENT_COLORS.internal_meeting
-                          return <div key={j} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: config.dot }} />
-                        })}
-                      </div>
-                      {dayEvents.length > 3 && (
-                        <p className="hidden sm:block text-[10px] text-gray-400 pr-1">+{dayEvents.length - 3}</p>
-                      )}
-                    </div>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Selected date detail */}
-        {selectedDate && (
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <h2 className="font-bold text-gray-800 mb-3">
-              {new Date(selectedDate + "T00:00:00").toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
-            </h2>
-            {selectedEvents.length === 0 ? (
-              <p className="text-gray-400 text-sm">אין אירועים ביום הזה</p>
-            ) : (
-              <div className="space-y-2">
-                {selectedEvents.map((ev: any) => {
-                  const config = EVENT_COLORS[ev.type as keyof typeof EVENT_COLORS] || EVENT_COLORS.internal_meeting
                   return (
-                    <Link
-                      key={ev.id}
-                      href={`/projects/${ev.project.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition"
+                    <button
+                      key={i}
+                      onClick={() => setSelectedDate(dateStr === selectedDate ? null : dateStr)}
+                      className={`min-h-[64px] p-1.5 border-b border-l border-gray-100 text-right transition-colors relative ${
+                        isSelected ? "bg-pink-50" : "hover:bg-gray-50"
+                      } ${isFriSat ? "bg-gray-50/50" : ""}`}
                     >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
-                        style={{ backgroundColor: config.bg, color: config.text }}>
-                        {ev.type === "final_submission" ? <Package size={16} /> : ev.type === "interim_submission" ? <ClipboardList size={16} /> : ev.type === "internal_meeting" ? <Users size={16} /> : <Handshake size={16} />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-800 truncate">{ev.title}</p>
-                        <p className="text-xs text-gray-400 truncate">{ev.project.name} · {config.label}</p>
-                      </div>
-                      <span className="text-xs px-2 py-1 rounded-full shrink-0"
-                        style={{ backgroundColor: config.bg, color: config.text }}>
-                        {config.label}
+                      <span className={`text-xs font-medium inline-flex items-center justify-center ${
+                        isToday ? "w-6 h-6 rounded-full text-white" : isFriSat ? "text-gray-400" : "text-gray-700"
+                      }`}
+                        style={isToday ? { backgroundColor: BRAND.primaryColor } : {}}
+                      >
+                        {day}
                       </span>
-                    </Link>
+                      {dayEvents.length > 0 && (
+                        <div className="flex gap-0.5 mt-1 justify-center flex-wrap">
+                          {dayEvents.slice(0, 4).map((ev: any, j: number) => {
+                            const config = EVENT_TYPE_CONFIG[ev.type as keyof typeof EVENT_TYPE_CONFIG]
+                            return <span key={j} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: config?.color || "#999" }} />
+                          })}
+                        </div>
+                      )}
+                    </button>
                   )
                 })}
               </div>
+            </div>
+
+            {/* Selected date detail */}
+            {selectedDate && (
+              <div className="mt-4 border border-gray-200 rounded-lg bg-white p-4">
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}
+                </h3>
+                {selectedEvents.length === 0 ? (
+                  <p className="text-sm text-gray-400">אין אירועים</p>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedEvents.map((ev: any) => {
+                      const config = EVENT_TYPE_CONFIG[ev.type as keyof typeof EVENT_TYPE_CONFIG]
+                      const Icon = TYPE_ICONS[ev.type] || Package
+                      return (
+                        <Link
+                          key={ev.id}
+                          href={`/projects/${ev.project.id}`}
+                          className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition"
+                        >
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: config?.bg || "#F3F4F6" }}>
+                            <Icon size={14} style={{ color: config?.color || "#999" }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{ev.title}</p>
+                            <p className="text-[11px] text-gray-400 truncate">{ev.project.name}</p>
+                          </div>
+                          <span className="text-[11px] px-2 py-0.5 rounded-md shrink-0" style={{ backgroundColor: config?.bg, color: config?.color }}>
+                            {config?.label}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        )}
 
-        {/* Upcoming list (always visible below calendar) */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h2 className="font-bold text-gray-800 mb-3"><ListOrdered size={18} className="inline -mt-0.5" /> הבא בתור</h2>
-          {events.filter((e) => new Date(e.date) >= new Date()).length === 0 ? (
-            <p className="text-gray-400 text-sm">אין אירועים קרובים</p>
-          ) : (
-            <div className="space-y-2">
-              {events
-                .filter((e) => new Date(e.date) >= new Date())
-                .slice(0, 8)
-                .map((ev: any) => {
-                  const config = EVENT_COLORS[ev.type as keyof typeof EVENT_COLORS] || EVENT_COLORS.internal_meeting
+          {/* Agenda sidebar */}
+          <div className="lg:col-span-2">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">הבא בתור</h2>
+            <div className="border border-gray-200 rounded-lg bg-white divide-y divide-gray-100">
+              {monthEvents.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-sm text-gray-400">אין אירועים קרובים</p>
+                </div>
+              ) : (
+                monthEvents.slice(0, 10).map((ev: any) => {
+                  const config = EVENT_TYPE_CONFIG[ev.type as keyof typeof EVENT_TYPE_CONFIG]
                   const d = new Date(ev.date)
                   const daysLeft = Math.ceil((d.getTime() - Date.now()) / 86400000)
+                  const Icon = TYPE_ICONS[ev.type] || Package
+
                   return (
                     <Link
                       key={ev.id}
                       href={`/projects/${ev.project.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition border border-gray-50"
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
                     >
-                      {/* Date badge */}
-                      <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0"
-                        style={{ backgroundColor: config.bg }}>
-                        <span className="text-lg font-bold leading-none" style={{ color: config.text }}>{d.getDate()}</span>
-                        <span className="text-[10px] leading-none mt-0.5" style={{ color: config.text }}>
-                          {HEBREW_MONTHS[d.getMonth()].slice(0, 3)}
-                        </span>
+                      <div className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 border border-gray-200">
+                        <span className="text-sm font-bold text-gray-900 leading-none">{d.getDate()}</span>
+                        <span className="text-[9px] text-gray-400">{HEBREW_MONTHS[d.getMonth()].slice(0, 3)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-800 text-sm truncate">{ev.title}</p>
-                        <p className="text-xs text-gray-400 truncate">{ev.project.name}</p>
+                        <p className="text-sm font-medium text-gray-800 truncate">{ev.title}</p>
+                        <p className="text-[11px] text-gray-400 truncate">{ev.project.name}</p>
                       </div>
-                      <div className="text-left shrink-0">
-                        <span className={`text-xs font-medium ${daysLeft <= 3 ? "text-pink-600" : "text-gray-400"}`}>
-                          {daysLeft === 0 ? "היום" : daysLeft === 1 ? "מחר" : `${daysLeft} ימים`}
-                        </span>
-                      </div>
+                      <span className={`text-[11px] font-medium shrink-0 ${
+                        daysLeft <= 3 ? "text-pink-600" : "text-gray-400"
+                      }`}>
+                        {daysLeft === 0 ? "היום" : daysLeft === 1 ? "מחר" : `${daysLeft}d`}
+                      </span>
                     </Link>
                   )
-                })}
+                })
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }

@@ -5,14 +5,13 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
-import Navbar from "@/components/navbar"
-import { AlertTriangle, PartyPopper } from "lucide-react"
+import AppShell from "@/components/app-shell"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
 
 export default function UnstaffedPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [tasks, setTasks] = useState<any[]>([])
-  const [claiming, setClaiming] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -21,94 +20,56 @@ export default function UnstaffedPage() {
     }
   }, [status, router])
 
-  const claimTask = async (taskId: string) => {
-    setClaiming(taskId)
-    await fetch("/api/unstaffed", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId }),
-    })
-    setTasks((prev) => prev.filter((t) => t.id !== taskId))
-    setClaiming(null)
-  }
-
   if (!session) return null
 
   return (
-    <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      <Navbar />
-
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-4">
-        <h1 className="text-2xl font-bold" style={{ color: BRAND.dark }}>
-          <AlertTriangle size={20} className="inline -mt-0.5" style={{ color: "#E5007D" }} /> משימות ללא איוש ({tasks.length})
-        </h1>
+    <AppShell>
+      <div className="p-6 lg:p-8 max-w-[900px]">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <AlertCircle size={20} className="text-red-500" />
+            משימות ללא איוש
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">{tasks.length} משימות ממתינות</p>
+        </div>
 
         {tasks.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <PartyPopper size={40} className="mx-auto mb-2 text-green-400" />
-            <p className="text-gray-500">הכל מאויש! אין משימות פתוחות</p>
+          <div className="border border-gray-200 rounded-lg bg-white p-12 text-center">
+            <CheckCircle2 size={32} className="mx-auto text-green-400 mb-3" />
+            <p className="text-sm font-medium text-gray-800">הכל מאויש!</p>
+            <p className="text-xs text-gray-400 mt-1">אין משימות פתוחות ברגע זה</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {tasks.map((t) => {
+          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white divide-y divide-gray-100">
+            {tasks.map((t: any) => {
               const urg = URGENCY_CONFIG[t.urgency as keyof typeof URGENCY_CONFIG]
-              const daysLeft = t.deadline ? Math.ceil((new Date(t.deadline).getTime() - Date.now()) / 86400000) : null
-
               return (
-                <div key={t.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <Link href={`/projects/${t.project.id}`} className="text-sm text-gray-400 hover:underline">
-                        🏗️ {t.project.name}
-                      </Link>
-                      <h3 className="font-bold text-gray-800 text-lg">{t.title}</h3>
-                    </div>
-                    {urg && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: urg.bg, color: urg.color }}>
-                        {urg.label}
-                      </span>
-                    )}
+                <Link
+                  key={t.id}
+                  href={`/projects/${t.projectId}`}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">{t.project?.name}</p>
                   </div>
-
-                  {t.description && <p className="text-sm text-gray-600 mb-3">{t.description}</p>}
-
-                  <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
-                    <span>
-                      ראש צוות:{" "}
-                      <Link href={`/profile/${t.project.teamLead.id}`} className="font-medium" style={{ color: BRAND.primaryColor }}>
-                        {t.project.teamLead.fullName}
-                      </Link>
-                      {t.project.teamLead.phone && <span className="mr-1">📞</span>}
+                  {urg && (
+                    <span className="inline-flex items-center gap-1 text-[11px] shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: urg.color }} />
+                      <span style={{ color: urg.color }}>{urg.label}</span>
                     </span>
-                    {daysLeft !== null && (
-                      <span className={daysLeft <= 3 ? "text-red-500 font-medium" : ""}>
-                        {daysLeft} ימים להגשה
-                      </span>
-                    )}
-                  </div>
-
-                  {t.requiredSkills?.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {t.requiredSkills.map((s: string) => (
-                        <span key={s} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{s}</span>
-                      ))}
-                    </div>
                   )}
-
-                  <button
-                    onClick={() => claimTask(t.id)}
-                    disabled={claiming === t.id}
-                    className="w-full py-3 rounded-xl text-white font-semibold text-sm transition disabled:opacity-50"
-                    style={{ backgroundColor: BRAND.primaryColor }}
-                  >
-                    {claiming === t.id ? "משייך..." : "🙋 אני רוצה לקחת את זה"}
-                  </button>
-                </div>
+                  {t.deadline && (
+                    <span className="text-[11px] text-gray-400 shrink-0">
+                      {new Date(t.deadline).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                </Link>
               )
             })}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }

@@ -32,62 +32,59 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md mx-4">
-        <div className="text-center mb-8">
+    <div className="min-h-screen flex items-center justify-center bg-white" dir="rtl">
+      <div className="w-full max-w-sm mx-4">
+        <div className="text-center mb-10">
           <img
             src={BRAND.logoUrl}
             alt="XS Studio"
-            className="h-20 mx-auto mb-4"
+            className="h-16 mx-auto mb-4"
           />
-          <h1 className="text-2xl font-bold" style={{ color: BRAND.dark }}>XSAPP</h1>
-          <p className="text-gray-400 mt-1">מערכת ניהול סטודיו</p>
+          <h1 className="text-xl font-bold text-gray-900">XSAPP</h1>
+          <p className="text-sm text-gray-400 mt-1">מערכת ניהול סטודיו</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100" dir="rtl">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-left"
-                style={{ focusRingColor: BRAND.primaryColor } as any}
-                placeholder="your@email.com"
-                dir="ltr"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent"
-                placeholder="••••••••"
-                dir="ltr"
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">אימייל</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition"
+              placeholder="your@email.com"
+              dir="ltr"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">סיסמה</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-300 transition"
+              placeholder="••••••••"
+              dir="ltr"
+              required
+            />
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm mt-3 text-center">{error}</p>
+            <p className="text-red-500 text-sm text-center">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 py-3 rounded-xl text-white font-semibold text-lg transition-all disabled:opacity-50"
+            className="w-full py-3 rounded-lg text-white font-medium text-sm transition-all disabled:opacity-50 hover:opacity-90"
             style={{ backgroundColor: BRAND.primaryColor }}
           >
             {loading ? "מתחבר..." : "התחברות"}
           </button>
         </form>
 
-        <p className="text-center text-gray-300 text-sm mt-6">
+        <p className="text-center text-gray-300 text-xs mt-8">
           XS Studio © {new Date().getFullYear()}
         </p>
       </div>
