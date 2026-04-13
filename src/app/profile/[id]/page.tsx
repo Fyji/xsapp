@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
-import { Hand, Phone } from "lucide-react"
+import { Phone as PhoneIcon } from "lucide-react"
 
 export default function EmployeeProfile() {
   const { data: session, status } = useSession()
@@ -15,11 +15,11 @@ export default function EmployeeProfile() {
   const userId = params.id as string
   const [profile, setProfile] = useState<any>(null)
   const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
     if (status === "authenticated" && userId) {
-      // If viewing own profile, redirect to /profile
       if ((session?.user as any)?.id === userId) {
         router.push("/profile")
         return
@@ -28,15 +28,15 @@ export default function EmployeeProfile() {
     }
   }, [status, userId, session, router])
 
-  const sendHandRaise = async (type: "hand" | "call") => {
+  const requestMeeting = async () => {
     setSending(true)
     await fetch("/api/hand-raise", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ toUserId: userId, type }),
+      body: JSON.stringify({ toUserId: userId, type: "call" }),
     })
     setSending(false)
-    alert(type === "hand" ? "הרמת יד נשלחה" : "בקשת פגישה נשלחה")
+    setSent(true)
   }
 
   if (!profile) return (
@@ -70,9 +70,8 @@ export default function EmployeeProfile() {
             </div>
             <div className="flex-1">
               <h1 className="text-xl font-bold text-gray-800">{profile.fullName}</h1>
-              <p className="text-sm text-gray-500">{profile.title || profile.role}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-sm" style={{ color: avail.color }}>{avail.icon}</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: avail.color }} />
                 <span className="text-sm text-gray-600">{avail.label}</span>
               </div>
             </div>
@@ -85,29 +84,25 @@ export default function EmployeeProfile() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => sendHandRaise("hand")}
-              disabled={sending}
-              className="flex-1 py-3 rounded-xl text-white font-medium transition disabled:opacity-50"
-              style={{ backgroundColor: BRAND.primaryColor }}
-            >
-              ✋ הרמת יד
-            </button>
-            <button
-              onClick={() => sendHandRaise("call")}
-              disabled={sending}
-              className="flex-1 py-3 rounded-xl font-medium border-2 transition disabled:opacity-50"
-              style={{ borderColor: BRAND.primaryColor, color: BRAND.primaryColor }}
-            >
-              📞 בקשת פגישה
-            </button>
-          </div>
+          {/* Meeting request button */}
+          <button
+            onClick={requestMeeting}
+            disabled={sending || sent}
+            className="w-full py-3 rounded-xl font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
+            style={sent ? { backgroundColor: "#DCFCE7", color: "#16A34A" } : { backgroundColor: BRAND.primaryColor, color: "#fff" }}
+          >
+            {sent ? (
+              "בקשת פגישה נשלחה"
+            ) : sending ? (
+              "שולח..."
+            ) : (
+              <><PhoneIcon size={16} /> בקשת פגישה</>
+            )}
+          </button>
 
           {profile.phone && (
-            <a href={`tel:${profile.phone}`} className="block text-center text-sm text-gray-400 mt-3 hover:text-gray-600">
-              📱 {profile.phone}
+            <a href={`tel:${profile.phone}`} className="flex items-center justify-center gap-1.5 text-sm text-gray-400 mt-3 hover:text-gray-600">
+              <PhoneIcon size={13} /> {profile.phone}
             </a>
           )}
         </div>
@@ -127,7 +122,6 @@ export default function EmployeeProfile() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-semibold text-gray-800">{p.name}</p>
-                        <p className="text-xs text-gray-400">{p.roleInProject}</p>
                       </div>
                       <div className="text-left">
                         {urg && (
