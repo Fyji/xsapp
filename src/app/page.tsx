@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
+import Navbar from "@/components/navbar"
 
 interface Employee {
   id: string
@@ -60,35 +61,17 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={BRAND.logoUrl} alt="XS" className="h-10" />
-            <span className="font-bold text-lg" style={{ color: BRAND.dark }}>XSAPP</span>
-          </div>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/" className="font-semibold" style={{ color: BRAND.primaryColor }}>בית</Link>
-            <Link href="/projects" className="text-gray-500 hover:text-gray-800">פרויקטים</Link>
-            <Link href="/timeline" className="text-gray-500 hover:text-gray-800">לו״ז</Link>
-            <Link href="/unstaffed" className="text-gray-500 hover:text-gray-800">ללא איוש</Link>
-            <Link href={`/profile/${(session.user as any).id}`} className="text-gray-500 hover:text-gray-800">פרופיל</Link>
-            {(session.user as any).role === "admin" && (
-              <Link href="/admin" className="text-gray-500 hover:text-gray-800">⚙️ ניהול</Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Welcome */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold" style={{ color: BRAND.dark }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: BRAND.dark }}>
             שלום, {session.user?.name} 👋
           </h1>
           <Link
             href="/profile"
-            className="px-4 py-2 rounded-xl text-white text-sm font-medium"
+            className="px-4 py-2 rounded-xl text-white text-sm font-medium text-center"
             style={{ backgroundColor: BRAND.primaryColor }}
           >
             עדכון סטטוס יומי

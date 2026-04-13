@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
+import Navbar from "@/components/navbar"
 
 export default function NewProject() {
   const { data: session } = useSession()
@@ -31,15 +32,7 @@ export default function NewProject() {
 
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/projects" className="flex items-center gap-2">
-            <img src={BRAND.logoUrl} alt="XS" className="h-8" />
-            <span className="font-bold" style={{ color: BRAND.dark }}>XSAPP</span>
-          </Link>
-          <span className="text-gray-600 text-sm">פרויקט חדש</span>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 shadow-sm space-y-4">

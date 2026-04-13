@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { BRAND, URGENCY_CONFIG, EVENT_TYPE_CONFIG } from "@/lib/constants"
 import Link from "next/link"
+import Navbar from "@/components/navbar"
 
 export default function ProjectDetail() {
   const { data: session, status } = useSession()
@@ -30,15 +31,7 @@ export default function ProjectDetail() {
 
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/projects" className="flex items-center gap-2">
-            <img src={BRAND.logoUrl} alt="XS" className="h-8" />
-            <span className="font-bold" style={{ color: BRAND.dark }}>XSAPP</span>
-          </Link>
-          <button onClick={() => router.back()} className="text-gray-500 text-sm hover:text-gray-800">→ חזרה</button>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Project Header */}

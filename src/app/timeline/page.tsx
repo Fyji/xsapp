@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, EVENT_TYPE_CONFIG } from "@/lib/constants"
 import Link from "next/link"
+import Navbar from "@/components/navbar"
 
 export default function TimelinePage() {
   const { data: session, status } = useSession()
@@ -30,15 +31,7 @@ export default function TimelinePage() {
 
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <img src={BRAND.logoUrl} alt="XS" className="h-8" />
-            <span className="font-bold" style={{ color: BRAND.dark }}>XSAPP</span>
-          </Link>
-          <span className="text-gray-600 text-sm">לוח זמנים</span>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: BRAND.dark }}>📅 לו״ז סטודיו</h1>

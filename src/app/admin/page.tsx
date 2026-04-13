@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
+import Navbar from "@/components/navbar"
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "מנהל",
@@ -98,18 +99,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <img src={BRAND.logoUrl} alt="XS" className="h-10" />
-            </Link>
-            <span className="font-bold text-lg" style={{ color: BRAND.dark }}>ניהול</span>
-          </div>
-          <Link href="/" className="text-gray-500 text-sm hover:text-gray-800">→ חזרה לדשבורד</Link>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto px-4 pt-4">
@@ -157,21 +147,21 @@ export default function AdminPage() {
             {/* Availability Summary */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="font-bold text-gray-700 mb-4">זמינות הצוות היום</h2>
-              <div className="flex flex-wrap gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-3">
                 {Object.entries(AVAILABILITY_CONFIG).map(([key, config]) => {
                   const count = stats.availabilitySummary[key] || 0
                   return (
                     <div key={key} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
                       <span className="text-lg">{config.icon}</span>
-                      <span className="text-2xl font-bold" style={{ color: config.color }}>{count}</span>
-                      <span className="text-sm text-gray-500">{config.label}</span>
+                      <span className="text-xl font-bold" style={{ color: config.color }}>{count}</span>
+                      <span className="text-xs sm:text-sm text-gray-500">{config.label}</span>
                     </div>
                   )
                 })}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
                   <span className="text-lg">❓</span>
-                  <span className="text-2xl font-bold text-gray-400">{stats.availabilitySummary.no_update || 0}</span>
-                  <span className="text-sm text-gray-500">לא עדכנו</span>
+                  <span className="text-xl font-bold text-gray-400">{stats.availabilitySummary.no_update || 0}</span>
+                  <span className="text-xs sm:text-sm text-gray-500">לא עדכנו</span>
                 </div>
               </div>
             </div>
@@ -316,8 +306,8 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* Users Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Users — Desktop table */}
+            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-100">
@@ -360,6 +350,37 @@ export default function AdminPage() {
                 </table>
               </div>
             </div>
+
+            {/* Users — Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {users.map((u) => (
+                <div key={u.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-bold text-gray-800">{u.fullName}</p>
+                      <p className="text-xs text-gray-400" dir="ltr">{u.email}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      u.role === "admin" ? "bg-purple-100 text-purple-700" :
+                      u.role === "team_lead" ? "bg-blue-100 text-blue-700" :
+                      "bg-gray-100 text-gray-600"
+                    }`}>
+                      {ROLE_LABELS[u.role]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                    {u.title && <span>{u.title}</span>}
+                    <span>{u.activeProjects} פרויקטים</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditingUser(u)}
+                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">✏️ ערוך</button>
+                    <button onClick={() => deleteUser(u.id, u.fullName)}
+                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">🗑️ מחק</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -376,10 +397,10 @@ export default function AdminPage() {
               {projects.map((p) => {
                 const urg = URGENCY_CONFIG[p.urgency as keyof typeof URGENCY_CONFIG]
                 return (
-                  <div key={p.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <div className="flex items-start justify-between">
+                  <div key={p.id} className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <h3 className="font-bold text-gray-800">{p.name}</h3>
                           {urg && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium"
@@ -398,11 +419,11 @@ export default function AdminPage() {
                           ראש צוות: {p.teamLead?.fullName} · {p.memberCount} חברי צוות · {p.totalTasks} משימות ({p.openTasks} פתוחות)
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <select
                           value={p.status}
                           onChange={(e) => updateProject(p.id, { status: e.target.value })}
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200"
+                          className="text-xs px-2 py-1.5 rounded-lg border border-gray-200"
                         >
                           <option value="active">פעיל</option>
                           <option value="on_hold">מושהה</option>
@@ -412,16 +433,16 @@ export default function AdminPage() {
                         <select
                           value={p.urgency}
                           onChange={(e) => updateProject(p.id, { urgency: e.target.value })}
-                          className="text-xs px-2 py-1 rounded-lg border border-gray-200"
+                          className="text-xs px-2 py-1.5 rounded-lg border border-gray-200"
                         >
                           {Object.entries(URGENCY_CONFIG).map(([key, config]) => (
                             <option key={key} value={key}>{config.icon} {config.label}</option>
                           ))}
                         </select>
                         <Link href={`/projects/${p.id}`}
-                          className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">👁️</Link>
+                          className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">👁️</Link>
                         <button onClick={() => deleteProject(p.id, p.name)}
-                          className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">🗑️</button>
+                          className="text-xs px-2 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">🗑️</button>
                       </div>
                     </div>
                   </div>
