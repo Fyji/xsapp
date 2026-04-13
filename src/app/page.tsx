@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
-import { Calendar, AlertTriangle, Bell, CheckCircle2 } from "lucide-react"
+import { Calendar, AlertTriangle, Bell, CheckCircle2, Check } from "lucide-react"
 
 interface Employee {
   id: string
@@ -60,6 +60,15 @@ export default function Dashboard() {
   const formatDate = (d: string) => new Date(d).toLocaleDateString("he-IL", { day: "numeric", month: "short" })
   const daysUntil = (d: string) => Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
 
+  const markComplete = async (eventId: string) => {
+    await fetch("/api/events/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId }),
+    })
+    setEvents((prev) => prev.map((e) => e.id === eventId ? { ...e, completedAt: new Date().toISOString() } : e))
+  }
+
   return (
     <div className="min-h-screen" style={{ background: BRAND.grayLight }}>
       <Navbar />
@@ -91,24 +100,42 @@ export default function Dashboard() {
               <p className="text-gray-400 text-sm">אין הגשות בשבוע הקרוב</p>
             ) : (
               <div className="space-y-2">
-                {events.map((ev) => (
-                  <Link
-                    key={ev.id}
-                    href={`/projects/${ev.project.id}`}
-                    className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{ev.project.name}</p>
-                      <p className="text-xs text-gray-500">{ev.title}</p>
+                {events.map((ev) => {
+                  const isCompleted = !!(ev as any).completedAt
+                  return (
+                    <div key={ev.id} className={`flex items-center gap-2 py-2 px-3 rounded-lg transition ${isCompleted ? "bg-green-50" : "hover:bg-gray-50"}`}>
+                      <button
+                        onClick={(e) => { e.preventDefault(); if (!isCompleted) markComplete(ev.id) }}
+                        className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition ${
+                          isCompleted
+                            ? "bg-green-500 border-green-500 text-white"
+                            : "border-gray-300 hover:border-pink-400 text-transparent hover:text-pink-300"
+                        }`}
+                        title={isCompleted ? "הוגש" : "סמן כהוגש"}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <Link href={`/projects/${ev.project.id}`} className="flex-1 flex items-center justify-between min-w-0">
+                        <div className="min-w-0">
+                          <p className={`text-sm font-medium truncate ${isCompleted ? "text-gray-400 line-through" : "text-gray-800"}`}>{ev.project.name}</p>
+                          <p className={`text-xs truncate ${isCompleted ? "text-gray-300" : "text-gray-500"}`}>{ev.title}</p>
+                        </div>
+                        <div className="text-left shrink-0 mr-2">
+                          {isCompleted ? (
+                            <p className="text-xs text-green-600 font-medium">הוגש</p>
+                          ) : (
+                            <>
+                              <p className="text-sm font-semibold" style={{ color: daysUntil(ev.date) <= 2 ? "#EF4444" : BRAND.primaryColor }}>
+                                {formatDate(ev.date)}
+                              </p>
+                              <p className="text-xs text-gray-400">{daysUntil(ev.date)} ימים</p>
+                            </>
+                          )}
+                        </div>
+                      </Link>
                     </div>
-                    <div className="text-left">
-                      <p className="text-sm font-semibold" style={{ color: daysUntil(ev.date) <= 2 ? "#EF4444" : BRAND.primaryColor }}>
-                        {formatDate(ev.date)}
-                      </p>
-                      <p className="text-xs text-gray-400">{daysUntil(ev.date)} ימים</p>
-                    </div>
-                  </Link>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

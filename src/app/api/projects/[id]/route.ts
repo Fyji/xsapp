@@ -8,7 +8,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     include: {
       teamLead: true,
       members: { include: { user: true } },
-      events: { orderBy: { date: "asc" } },
+      events: {
+        orderBy: { date: "asc" },
+        include: { completedBy: { select: { id: true, fullName: true } } },
+      },
       tasks: {
         include: {
           assignedTo: { select: { id: true, fullName: true } },

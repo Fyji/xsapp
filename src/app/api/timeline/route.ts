@@ -9,6 +9,7 @@ export async function GET() {
     },
     include: {
       project: { select: { id: true, name: true, urgency: true } },
+      completedBy: { select: { id: true, fullName: true } },
     },
     orderBy: { date: "asc" },
   })
