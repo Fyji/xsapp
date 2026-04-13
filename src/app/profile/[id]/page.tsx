@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import { Hand, Phone } from "lucide-react"
 
 export default function EmployeeProfile() {
   const { data: session, status } = useSession()
@@ -35,7 +36,7 @@ export default function EmployeeProfile() {
       body: JSON.stringify({ toUserId: userId, type }),
     })
     setSending(false)
-    alert(type === "hand" ? "הרמת יד נשלחה! ✋" : "בקשת פגישה נשלחה! 📞")
+    alert(type === "hand" ? "הרמת יד נשלחה" : "בקשת פגישה נשלחה")
   }
 
   if (!profile) return (

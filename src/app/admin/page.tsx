@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import { Users, FolderOpen, AlertTriangle, Hand, HelpCircle, Pencil, Trash2, Eye, Plus } from "lucide-react"
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "מנהל",
@@ -131,13 +132,13 @@ export default function AdminPage() {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "עובדים", value: stats.totalUsers, icon: "👥", color: BRAND.primaryColor },
-                { label: "פרויקטים פעילים", value: stats.activeProjects, icon: "📁", color: "#3B82F6" },
-                { label: "משימות ללא איוש", value: stats.openTasks, icon: "🚨", color: "#EF4444" },
-                { label: "בקשות ממתינות", value: stats.pendingHandRaises, icon: "✋", color: "#F59E0B" },
+                { label: "עובדים", value: stats.totalUsers, icon: "users", color: BRAND.primaryColor },
+                { label: "פרויקטים פעילים", value: stats.activeProjects, icon: "folder", color: "#3B82F6" },
+                { label: "משימות ללא איוש", value: stats.openTasks, icon: "alert", color: "#EF4444" },
+                { label: "בקשות ממתינות", value: stats.pendingHandRaises, icon: "hand", color: "#F59E0B" },
               ].map((kpi) => (
                 <div key={kpi.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <p className="text-2xl mb-1">{kpi.icon}</p>
+                  {kpi.icon === "users" ? <Users size={24} style={{ color: kpi.color }} /> : kpi.icon === "folder" ? <FolderOpen size={24} style={{ color: kpi.color }} /> : kpi.icon === "alert" ? <AlertTriangle size={24} style={{ color: kpi.color }} /> : <Hand size={24} style={{ color: kpi.color }} />}
                   <p className="text-3xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
                   <p className="text-sm text-gray-500">{kpi.label}</p>
                 </div>
@@ -159,7 +160,7 @@ export default function AdminPage() {
                   )
                 })}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50">
-                  <span className="text-lg">❓</span>
+                  <HelpCircle size={18} className="text-gray-400" />
                   <span className="text-xl font-bold text-gray-400">{stats.availabilitySummary.no_update || 0}</span>
                   <span className="text-xs sm:text-sm text-gray-500">לא עדכנו</span>
                 </div>
@@ -198,7 +199,7 @@ export default function AdminPage() {
                 className="px-4 py-2 rounded-xl text-white text-sm font-medium"
                 style={{ backgroundColor: BRAND.primaryColor }}
               >
-                + עובד חדש
+                <Plus size={14} className="inline -mt-0.5" /> עובד חדש
               </button>
             </div>
 
@@ -339,9 +340,9 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
                             <button onClick={() => setEditingUser(u)}
-                              className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">✏️ ערוך</button>
+                              className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"><Pencil size={12} className="inline -mt-0.5" /> ערוך</button>
                             <button onClick={() => deleteUser(u.id, u.fullName)}
-                              className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">🗑️ מחק</button>
+                              className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={12} className="inline -mt-0.5" /> מחק</button>
                           </div>
                         </td>
                       </tr>
@@ -374,9 +375,9 @@ export default function AdminPage() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setEditingUser(u)}
-                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">✏️ ערוך</button>
+                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"><Pencil size={12} className="inline -mt-0.5" /> ערוך</button>
                     <button onClick={() => deleteUser(u.id, u.fullName)}
-                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">🗑️ מחק</button>
+                      className="flex-1 text-xs px-2 py-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={12} className="inline -mt-0.5" /> מחק</button>
                   </div>
                 </div>
               ))}
@@ -390,7 +391,7 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold" style={{ color: BRAND.dark }}>ניהול פרויקטים ({projects.length})</h2>
               <Link href="/projects/new" className="px-4 py-2 rounded-xl text-white text-sm font-medium"
-                style={{ backgroundColor: BRAND.primaryColor }}>+ פרויקט חדש</Link>
+                style={{ backgroundColor: BRAND.primaryColor }}><Plus size={14} className="inline -mt-0.5" /> פרויקט חדש</Link>
             </div>
 
             <div className="space-y-3">
@@ -440,9 +441,9 @@ export default function AdminPage() {
                           ))}
                         </select>
                         <Link href={`/projects/${p.id}`}
-                          className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">👁️</Link>
+                          className="text-xs px-2 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"><Eye size={12} /></Link>
                         <button onClick={() => deleteProject(p.id, p.name)}
-                          className="text-xs px-2 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">🗑️</button>
+                          className="text-xs px-2 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"><Trash2 size={12} /></button>
                       </div>
                     </div>
                   </div>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import { Calendar, AlertTriangle, Bell, CheckCircle2 } from "lucide-react"
 
 interface Employee {
   id: string
@@ -67,7 +68,7 @@ export default function Dashboard() {
         {/* Welcome */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: BRAND.dark }}>
-            שלום, {session.user?.name} 👋
+            שלום, {session.user?.name}
           </h1>
           <Link
             href="/profile"
@@ -83,7 +84,8 @@ export default function Dashboard() {
           {/* Upcoming Deadlines */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <h2 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-              📅 הגשות קרובות
+              <Calendar size={18} style={{ color: BRAND.primaryColor }} />
+              הגשות קרובות
             </h2>
             {events.length === 0 ? (
               <p className="text-gray-400 text-sm">אין הגשות בשבוע הקרוב</p>
@@ -114,13 +116,16 @@ export default function Dashboard() {
           {/* Unstaffed */}
           <Link href="/unstaffed" className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
             <h2 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-              🚨 פרויקטים ומשימות ללא איוש
+              <AlertTriangle size={18} className="text-red-500" />
+              משימות ללא איוש
             </h2>
             <p className="text-4xl font-bold" style={{ color: unstaffedCount > 0 ? BRAND.primaryColor : "#22C55E" }}>
               {unstaffedCount}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {unstaffedCount > 0 ? "לחצו כאן כדי לראות ולהתנדב" : "הכל מאויש 🎉"}
+              {unstaffedCount > 0 ? "לחצו כאן כדי לראות ולהתנדב" : (
+                <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /> הכל מאויש</span>
+              )}
             </p>
           </Link>
         </div>
@@ -137,11 +142,9 @@ export default function Dashboard() {
                   href={`/profile/${emp.id}`}
                   className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-pink-200 transition text-center group"
                 >
-                  {/* Avatar */}
                   <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-white text-xl font-bold mb-2 relative"
                     style={{ backgroundColor: BRAND.primaryColor }}>
                     {emp.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                    {/* Availability dot */}
                     <span
                       className="absolute -bottom-0.5 -left-0.5 w-4 h-4 rounded-full border-2 border-white"
                       style={{ backgroundColor: avail.color }}
@@ -153,8 +156,8 @@ export default function Dashboard() {
                     {emp.activeProjectCount} פרויקטים
                   </p>
                   {emp.pendingHandRaises > 0 && (
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">
-                      🔔 {emp.pendingHandRaises}
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">
+                      <Bell size={10} /> {emp.pendingHandRaises}
                     </span>
                   )}
                   {emp.dailyNote && (

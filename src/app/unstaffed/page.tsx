@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { BRAND, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import { AlertTriangle, PartyPopper } from "lucide-react"
 
 export default function UnstaffedPage() {
   const { data: session, status } = useSession()
@@ -39,12 +40,12 @@ export default function UnstaffedPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-4">
         <h1 className="text-2xl font-bold" style={{ color: BRAND.dark }}>
-          🚨 משימות ללא איוש ({tasks.length})
+          <AlertTriangle size={20} className="inline -mt-0.5" style={{ color: "#E5007D" }} /> משימות ללא איוש ({tasks.length})
         </h1>
 
         {tasks.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <p className="text-4xl mb-2">🎉</p>
+            <PartyPopper size={40} className="mx-auto mb-2 text-green-400" />
             <p className="text-gray-500">הכל מאויש! אין משימות פתוחות</p>
           </div>
         ) : (

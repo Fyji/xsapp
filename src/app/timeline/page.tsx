@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { BRAND } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import { Package, ClipboardList, Users, Handshake, ListOrdered } from "lucide-react"
 
 const EVENT_COLORS = {
   final_submission: { bg: "#E5007D", text: "#fff", label: "הגשה סופית", dot: "#E5007D" },
@@ -192,7 +193,7 @@ export default function TimelinePage() {
                     >
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                         style={{ backgroundColor: config.bg, color: config.text }}>
-                        {ev.type === "final_submission" ? "📦" : ev.type === "interim_submission" ? "📋" : ev.type === "internal_meeting" ? "👥" : "🤝"}
+                        {ev.type === "final_submission" ? <Package size={16} /> : ev.type === "interim_submission" ? <ClipboardList size={16} /> : ev.type === "internal_meeting" ? <Users size={16} /> : <Handshake size={16} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-800 truncate">{ev.title}</p>
@@ -212,7 +213,7 @@ export default function TimelinePage() {
 
         {/* Upcoming list (always visible below calendar) */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h2 className="font-bold text-gray-800 mb-3">📋 הבא בתור</h2>
+          <h2 className="font-bold text-gray-800 mb-3"><ListOrdered size={18} className="inline -mt-0.5" /> הבא בתור</h2>
           {events.filter((e) => new Date(e.date) >= new Date()).length === 0 ? (
             <p className="text-gray-400 text-sm">אין אירועים קרובים</p>
           ) : (

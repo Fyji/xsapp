@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { BRAND, AVAILABILITY_CONFIG, URGENCY_CONFIG } from "@/lib/constants"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import { Bell, Check, X } from "lucide-react"
 
 export default function MyProfile() {
   const { data: session, status } = useSession()
@@ -154,13 +155,13 @@ export default function MyProfile() {
         {/* Pending Hand Raises */}
         {profile.pendingHandRaises.length > 0 && (
           <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="font-bold text-gray-700 mb-3">🔔 בקשות ממתינות</h2>
+            <h2 className="font-bold text-gray-700 mb-3"><Bell size={18} className="inline -mt-0.5" style={{ color: "#E5007D" }} /> בקשות ממתינות</h2>
             <div className="space-y-2">
               {profile.pendingHandRaises.map((hr: any) => (
                 <div key={hr.id} className="flex items-center justify-between p-3 rounded-xl bg-pink-50 border border-pink-100">
                   <div>
                     <p className="text-sm font-medium text-gray-800">
-                      {hr.type === "hand" ? "✋" : "📞"} {hr.from.fullName}
+                      {hr.from.fullName}
                     </p>
                     <p className="text-xs text-gray-400">
                       {new Date(hr.createdAt).toLocaleDateString("he-IL")}

@@ -5,12 +5,13 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BRAND } from "@/lib/constants"
+import { Home, FolderOpen, Calendar, UserPlus, User, Settings } from "lucide-react"
 
 const NAV_ITEMS = [
-  { href: "/", label: "בית" },
-  { href: "/projects", label: "פרויקטים" },
-  { href: "/timeline", label: "לו״ז" },
-  { href: "/unstaffed", label: "ללא איוש" },
+  { href: "/", label: "בית", icon: Home },
+  { href: "/projects", label: "פרויקטים", icon: FolderOpen },
+  { href: "/timeline", label: "לו״ז", icon: Calendar },
+  { href: "/unstaffed", label: "ללא איוש", icon: UserPlus },
 ]
 
 export default function Navbar() {
@@ -22,8 +23,8 @@ export default function Navbar() {
 
   const allItems = [
     ...NAV_ITEMS,
-    ...(userId ? [{ href: `/profile/${userId}`, label: "פרופיל" }] : []),
-    ...(isAdmin ? [{ href: "/admin", label: "⚙️ ניהול" }] : []),
+    ...(userId ? [{ href: `/profile/${userId}`, label: "פרופיל", icon: User }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "ניהול", icon: Settings }] : []),
   ]
 
   const isActive = (href: string) => {
@@ -42,20 +43,24 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {allItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                isActive(item.href)
-                  ? "text-white"
-                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-              }`}
-              style={isActive(item.href) ? { backgroundColor: BRAND.primaryColor } : {}}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {allItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                  isActive(item.href)
+                    ? "text-white"
+                    : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                }`}
+                style={isActive(item.href) ? { backgroundColor: BRAND.primaryColor } : {}}
+              >
+                {Icon && <Icon size={15} />}
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Mobile hamburger */}
@@ -74,21 +79,25 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t border-gray-100 bg-white">
           <nav className="max-w-6xl mx-auto px-4 py-2 flex flex-col">
-            {allItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={`px-3 py-3 rounded-lg text-sm font-medium transition border-b border-gray-50 last:border-0 ${
-                  isActive(item.href)
-                    ? "text-white"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-                style={isActive(item.href) ? { backgroundColor: BRAND.primaryColor } : {}}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {allItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition border-b border-gray-50 last:border-0 ${
+                    isActive(item.href)
+                      ? "text-white"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                  style={isActive(item.href) ? { backgroundColor: BRAND.primaryColor } : {}}
+                >
+                  {Icon && <Icon size={16} />}
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
         </div>
       )}
